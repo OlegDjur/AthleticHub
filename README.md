@@ -1,0 +1,13 @@
+## Applied Technologies
+- [ ] GraceFull Shutdown
+- [ ] Dependency Injections 
+- [ ] Postgres
+- [ ] Redis
+- [ ] Grafana
+- [ ] Prometeus
+- [ ] Разоаботка через TDD
+- [ ] Design Patterns
+- [ ] DRY
+- [ ] KISS
+- [ ] SOLID
+- [ ] Event-Driven Architecture. Внедрить паттерн Event Sourcing для истории изменений
