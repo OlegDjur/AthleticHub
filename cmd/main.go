@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
-	"workout/internal/handler"
+	"workout/internal/config"
+	handler "workout/internal/controller"
+	"workout/internal/service/activity"
 
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // - Заменить handler WorkoutsHandler на новые handlers
@@ -20,37 +23,39 @@ import (
 // - Создать модуль авторизации
 // - Настроить GraceFull shutdown
 
-func corsMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusOK)
-			return
+func corsMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		c.Response().Header().Set("Access-Control-Allow-Origin", "*")
+		c.Response().Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		if c.Request().Method == http.MethodOptions {
+			return c.NoContent(http.StatusOK)
 		}
-		next.ServeHTTP(w, r)
-	})
+		return next(c)
+	}
 }
 
 func main() {
-	r := chi.NewRouter()
+	cfg, err := config.LoadConfig("config/.env")
+	if err != nil {
+		log.Fatal("Ошибка загрузки конфигурации: ", err)
+	}
+	fmt.Printf("%+v", cfg)
+
+	e := echo.New()
 
 	// Логирование и восстановление после паники
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.Compress(5))
-	r.Use(middleware.Logger)
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(corsMiddleware)
 
-	// Твой CORS middleware
-	r.Use(corsMiddleware)
+	svc := activity.NewWorkoutService()
+	h := handler.NewWorkoutHandler(svc)
 
-	// Статические файлы
-	r.Handle("/static/*", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
-
-	r.Get("/", handler.HomeHandler)
-	r.Get("/api/v1/workouts", handler.WorkoutsHandler)
-	r.Get("/api/v1/workouts/{id}", handler.WorkoutHandler)
-	r.Post("/api/v1/workouts/upload", handler.UploadHandler)
+	// r.Get("/", handler.HomeHandler)
+	// r.Get("/api/v1/workouts", handler.WorkoutsHandler)
+	// r.Get("/api/v1/workouts/{id}", handler.WorkoutHandler)
+	e.POST("/api/v1/workouts/upload", h.UploadHandler)
+	// e.POST("/api/v1/workouts", h.CreateWorkout)
 	// r.Get("/api/v1/workouts/{id}/pacechart", handler.PaceChartHandler) // Получаем пейс для построения графика темпа
 
 	// Модуль Activity
@@ -79,8 +84,8 @@ func main() {
 	// GET /api/v1/coaches/{coachID}/reports — Список отчетов от всех спортсменов тренера.
 
 	// Запускаем сервер
-	log.Println("Сервер запущен на порту 8082")
-	if err := http.ListenAndServe(":8082", r); err != nil {
+	log.Printf("Сервер запущен на порту %s", cfg.Server.Port)
+	if err := http.ListenAndServe(":"+cfg.Server.Port, e); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
 	}
 }

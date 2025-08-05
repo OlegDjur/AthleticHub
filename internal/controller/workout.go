@@ -1,4 +1,4 @@
-package handler
+package controller
 
 // func (h *Handler) CreateWorkout(w http.ResponseWriter, r *http.Request) {
 // 	var workout model.Workout
