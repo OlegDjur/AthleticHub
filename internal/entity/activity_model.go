@@ -1,4 +1,4 @@
-package models
+package entity
 
 import (
 	"time"
@@ -30,7 +30,7 @@ type ActivityData struct {
 	MaxPower      uint16 // Максимальная мощность
 
 	MaxSpeedFromRecords uint16
-	
+
 	// GPS данные
 	StartPositionLat int32 // Начальная широта (в semicircles)
 	StartPositionLon int32 // Начальная долгота (в semicircles)

@@ -4,22 +4,25 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"workout/internal/dto"
+	"workout/internal/entity"
+
 	"github.com/muktihari/fit/decoder"
 	"github.com/muktihari/fit/profile/mesgdef"
 	"github.com/muktihari/fit/profile/untyped/mesgnum"
 	"github.com/muktihari/fit/proto"
-	"workout/internal/models"
 )
 
 type WorkoutService struct {
 	// Здесь будет репозиторий для работы с базой данных
+	Activity Activity
 }
 
-func NewWorkoutService() *WorkoutService {
-	return &WorkoutService{}
+func NewWorkoutService(act Activity) *WorkoutService {
+	return &WorkoutService{Activity: act}
 }
 
-func (s *WorkoutService) UploadFile(ctx context.Context, data []byte) (*models.Workout, error) {
+func (s *WorkoutService) UploadFile(ctx context.Context, data []byte) (*dto.UploadFile, error) {
 	// Создаем декодер для библиотеки muktihari/fit
 	// Декодер позволяет парсить FIT-файлы с различными опциями
 	dec := decoder.New(bytes.NewReader(data))
@@ -42,16 +45,16 @@ func (s *WorkoutService) UploadFile(ctx context.Context, data []byte) (*models.W
 	}
 
 	// Формируем объект тренировки для сохранения
-	newWorkout := models.NewWorkout(activityData)
+	newWorkout := dto.NewUploadFile(activityData)
 
 	return newWorkout, nil
 }
 
 // extractActivityData извлекает данные активности из массива протокольных сообщений
 // В muktihari/fit нужно вручную обрабатывать сообщения для получения данных
-func extractActivityData(messages []proto.Message) (*models.ActivityData, error) {
+func extractActivityData(messages []proto.Message) (*entity.ActivityData, error) {
 	// Инициализируем структуру для хранения данных
-	data := &models.ActivityData{}
+	data := &entity.ActivityData{}
 
 	// Флаги для отслеживания найденных сообщений
 	foundSession := false
@@ -94,7 +97,7 @@ func extractActivityData(messages []proto.Message) (*models.ActivityData, error)
 		case mesgnum.Record:
 			// Сообщение Record - детальные данные каждой секунды
 			//recordMsg := mesgdef.NewRecord(&message)
-			record := models.RecordData{}
+			record := entity.RecordData{}
 			data.Records = append(data.Records, record)
 			// // Если нашли оба ключевых сообщения, можно прекратить поиск
 			if foundSession && foundActivity {
@@ -111,12 +114,20 @@ func extractActivityData(messages []proto.Message) (*models.ActivityData, error)
 	return data, nil
 }
 
-func (s *WorkoutService) GetWorkout(ctx context.Context, id int64) (*models.Workout, error) {
-	// TODO: Реализовать получение из базы данных
-	return &models.Workout{}, nil
+func (s *WorkoutService) CreateWorkout(ctx context.Context, w entity.Workout) error {
+	if err := s.Activity.CreateWorkout(ctx, w); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (s *WorkoutService) UpdateWorkout(ctx context.Context, workout *models.Workout) error {
+func (s *WorkoutService) GetWorkout(ctx context.Context, id int64) (*entity.Workout, error) {
+	// TODO: Реализовать получение из базы данных
+	return &entity.Workout{}, nil
+}
+
+func (s *WorkoutService) UpdateWorkout(ctx context.Context, workout *entity.Workout) error {
 	// TODO: Реализовать обновление в базе данных
 	return nil
 }

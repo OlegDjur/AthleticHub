@@ -1,4 +1,4 @@
-package models
+package entity
 
 import (
 	"fmt"
@@ -9,9 +9,12 @@ import (
 // Workout представляет структуру данных для одной тренировки
 type Workout struct {
 	ID           string       `json:"id" db:"id"`                         // уникальный идентификатор тренировки
+	UserID       int64        `json:"user_id" db:"user_id"`               // id пользователя
+	Name         string       `json:"name" db:"name"`                     // Имя тренировки
+	Description  string       `json:"description" db:"description"`       // Описание тренировки (заметка)
 	Date         string       `json:"date" db:"date"`                     // дата проведения тренировки в формате YYYY-MM-DD
-	Distance     string       `json:"distance" db:"distance"`             // дистанция тренировки в километрах Форматируется с 2 знаками после запятой (например, "5.47")
 	Duration     string       `json:"duration" db:"duration"`             // продолжительность тренировки (без пауз) в формате ММ:СС или ЧЧ:ММ:СС
+	Distance     string       `json:"distance" db:"distance"`             // дистанция тренировки в километрах Форматируется с 2 знаками после запятой (например, "5.47")
 	AvgPace      string       `json:"avg_pace" db:"avg_pace"`             // средний темп в формате "М:СС мин/км" Рассчитывается на основе дистанции и активного времени
 	AvgHeartRate int          `json:"avg_heart_rate" db:"avg_heart_rate"` // средний пульс за тренировку в ударах в минуту
 	MaxHeartRate int          `json:"max_heart_rate" db:"avg_heart_rate"` // средний пульс за тренировку в ударах в минуту

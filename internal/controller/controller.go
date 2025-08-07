@@ -3,6 +3,7 @@ package controller
 import (
 	"io"
 	"net/http"
+	"workout/internal/entity"
 	"workout/internal/service/activity"
 
 	"github.com/labstack/echo/v4"
@@ -12,7 +13,7 @@ type Handler struct {
 	workoutService *activity.WorkoutService
 }
 
-func NewWorkoutHandler(workoutService *activity.WorkoutService) *Handler {
+func NewController(workoutService *activity.WorkoutService) *Handler {
 	return &Handler{
 		workoutService: workoutService,
 	}
@@ -61,6 +62,18 @@ func (h *Handler) UploadHandler(c echo.Context) error {
 	// Отправляем JSON ответ с созданной тренировкой через Echo
 	// c.JSON автоматически устанавливает Content-Type: application/json
 	// и HTTP статус 201 "Created" указывает что ресурс успешно создан
+	return c.JSON(http.StatusCreated, workout)
+}
+func (h *Handler) CreateWorkout(c echo.Context) error {
+	var workout entity.Workout
+	if err := c.Bind(&workout); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Некорректный формат данных"})
+	}
+
+	if err := h.workoutService.CreateWorkout(c.Request().Context(), workout); err != nil {
+		return err
+	}
+
 	return c.JSON(http.StatusCreated, workout)
 }
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"workout/internal/adapters/postgres"
 	"workout/internal/config"
 	handler "workout/internal/controller"
 	"workout/internal/service/activity"
@@ -12,13 +14,16 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-// - Заменить handler WorkoutsHandler на новые handlers
-// - Полключтить Postgres
-// - Настроить сохранение тренировок в бд
+// [] добавить возможность загрузки нескольких тренировок
+// [] вынести в пакет utils convertDistance
+// [] Создать структуру ответа после парсинга фит файлаы
+// [x] Заменить handler WorkoutsHandler на новые handlers
+// [x] Полключтить Postgres
+// [x] Настроить сохранение тренировок в бд
 // - Сделать эндпоинт для редактирования тренировки
 // - Сделать дефолтное имя тренировки
 // - Сделать график с объемом за неделю, месяц, год
-// - Вывксти рекорды по трассам
+// - Вывести рекорды по трассам
 // - Сделать профиль юзера
 // - Создать модуль авторизации
 // - Настроить GraceFull shutdown
@@ -48,21 +53,25 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(corsMiddleware)
 
-	svc := activity.NewWorkoutService()
-	h := handler.NewWorkoutHandler(svc)
+	repo, err := postgres.NewPostgresAdapter(cfg.Database)
+	if err != nil {
+		return
+	}
+	svc := activity.NewWorkoutService(repo)
+	h := handler.NewController(svc)
 
 	// r.Get("/", handler.HomeHandler)
 	// r.Get("/api/v1/workouts", handler.WorkoutsHandler)
 	// r.Get("/api/v1/workouts/{id}", handler.WorkoutHandler)
-	e.POST("/api/v1/workouts/upload", h.UploadHandler)
-	// e.POST("/api/v1/workouts", h.CreateWorkout)
+	e.POST("/api/v1/workout/upload", h.UploadHandler)
+	e.POST("/api/v1/workout", h.CreateWorkout)
+	//e.PUT("/activities/{id}", h.UpdateWorkout) // Обновление тренировки (например, добавление заметок)
 	// r.Get("/api/v1/workouts/{id}/pacechart", handler.PaceChartHandler) // Получаем пейс для построения графика темпа
 
 	// Модуль Activity
 	// /activities - загрузка новой тренировки
 	// /activities/{activityID} - Получение деталей тренировки
 	// /users/{userID}/activities - Список тренировок пользователя
-	// [PUT] /activities/{activityID} - Обновление тренировки (например, добавление заметок)
 	// [DELETE] /activities/{activityID} - Удаление тренировки
 	// [GET] /activities/summary - Агрегированная статистика тренировок
 	// [GET] /activities/{activityID}/analysis - Детальный анализ тренировки
@@ -84,8 +93,8 @@ func main() {
 	// GET /api/v1/coaches/{coachID}/reports — Список отчетов от всех спортсменов тренера.
 
 	// Запускаем сервер
-	log.Printf("Сервер запущен на порту %s", cfg.Server.Port)
-	if err := http.ListenAndServe(":"+cfg.Server.Port, e); err != nil {
+	log.Printf("Сервер запущен на порту %d", cfg.Server.Port)
+	if err := http.ListenAndServe(":"+strconv.Itoa(cfg.Server.Port), e); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
 	}
 }
