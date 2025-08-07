@@ -115,21 +115,15 @@ func extractActivityData(messages []proto.Message) (*entity.ActivityData, error)
 }
 
 func (s *WorkoutService) CreateWorkout(ctx context.Context, w entity.Workout) error {
-	if err := s.Activity.CreateWorkout(ctx, w); err != nil {
-		return err
-	}
-
-	return nil
+	return s.Activity.CreateWorkout(ctx, w)
 }
 
 func (s *WorkoutService) GetWorkout(ctx context.Context, id int64) (*entity.Workout, error) {
-	// TODO: Реализовать получение из базы данных
 	return &entity.Workout{}, nil
 }
 
-func (s *WorkoutService) UpdateWorkout(ctx context.Context, workout *entity.Workout) error {
-	// TODO: Реализовать обновление в базе данных
-	return nil
+func (s *WorkoutService) UpdateWorkout(ctx context.Context, u dto.UpdateWorkout) error {
+	return s.Activity.UpdateWorkout(ctx, u)
 }
 
 func (s *WorkoutService) DeleteWorkout(ctx context.Context, id int64) error {

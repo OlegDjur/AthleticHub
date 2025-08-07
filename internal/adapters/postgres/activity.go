@@ -2,6 +2,9 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
+	"workout/internal/dto"
 	"workout/internal/entity"
 )
 
@@ -78,4 +81,69 @@ func (p *postgres) GetWorkoutsByUserID(ctx context.Context, userID int64) ([]*en
 		workouts = append(workouts, workout)
 	}
 	return workouts, nil
+}
+
+func (p *postgres) UpdateWorkout(ctx context.Context, u dto.UpdateWorkout) error {
+	nextIdx := 2                        // счётчик плейсхолдеров $2, $3 …
+	setClauses := make([]string, 0, 12) // сюда будем складывать "col = $n"
+	args := []interface{}{u.ID}
+
+	// Хэлпер add(…) прячет всю «механику»:
+	//  • кладём "col = $n" в слайс setClauses
+	//  • добавляем само значение в args
+	//  • увеличиваем nextIdx
+	add := func(col string, val interface{}) {
+		setClauses = append(setClauses, fmt.Sprintf("%s = $%d", col, nextIdx))
+		args = append(args, val)
+		nextIdx++
+	}
+
+	if u.Name != nil {
+		add("name", *u.Name)
+	}
+	if u.SportType != nil {
+		add("type", *u.SportType)
+	}
+	if u.Duration != nil {
+		add("duration", *u.Duration)
+	}
+	if u.Distance != nil {
+		add("distance", *u.Distance)
+	}
+	if u.AvgPace != nil {
+		add("avg_pace", *u.AvgPace)
+	}
+	if u.AvgHeartRate != nil {
+		add("avg_heart_rate", *u.AvgHeartRate)
+	}
+	if u.MaxHeartRate != nil {
+		add("max_heart_rate", *u.MaxHeartRate)
+	}
+	if u.AvgCadence != nil {
+		add("avg_cadence", *u.AvgCadence)
+	}
+	if u.Calories != nil {
+		add("calories", *u.Calories)
+	}
+	if u.Description != nil {
+		add("description", *u.Description)
+	}
+
+	if len(setClauses) == 0 {
+		return nil
+	}
+
+	// Склеиваем окончательный SQL
+	// Пример получится такой:
+	// UPDATE workout
+	// SET name = $2, distance = $3, updated_at = CURRENT_TIMESTAMP
+	// WHERE id = $1;
+	query := fmt.Sprintf(`
+        UPDATE workout
+        SET %s,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $1`, strings.Join(setClauses, ", "))
+
+	_, err := p.db.Exec(ctx, query, args...)
+	return err
 }

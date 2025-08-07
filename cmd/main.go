@@ -65,7 +65,7 @@ func main() {
 	// r.Get("/api/v1/workouts/{id}", handler.WorkoutHandler)
 	e.POST("/api/v1/workout/upload", h.UploadHandler)
 	e.POST("/api/v1/workout", h.CreateWorkout)
-	//e.PUT("/activities/{id}", h.UpdateWorkout) // Обновление тренировки (например, добавление заметок)
+	e.PUT("/activities/{id}", h.UpdateWorkout) // Обновление тренировки (например, добавление заметок)
 	// r.Get("/api/v1/workouts/{id}/pacechart", handler.PaceChartHandler) // Получаем пейс для построения графика темпа
 
 	// Модуль Activity

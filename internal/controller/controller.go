@@ -3,6 +3,7 @@ package controller
 import (
 	"io"
 	"net/http"
+	"workout/internal/dto"
 	"workout/internal/entity"
 	"workout/internal/service/activity"
 
@@ -77,32 +78,16 @@ func (h *Handler) CreateWorkout(c echo.Context) error {
 	return c.JSON(http.StatusCreated, workout)
 }
 
-/*
-Основные отличия от старой библиотеки:
+func (h *Handler) UpdateWorkout(c echo.Context) error {
+	var request dto.UpdateWorkout
 
-1. ИМПОРТЫ:
-   - Новые импорты для muktihari/fit
-   - Отдельные пакеты для decoder, datetime, profile
+	if err := c.Bind(&request); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Некорректный формат данных"})
+	}
 
-2. ДЕКОДИРОВАНИЕ:
-   - decoder.New() вместо fit.Decode()
-   - Возвращает []proto.Message вместо готовой структуры
+	if err := h.workoutService.UpdateWorkout(c.Request().Context(), request); err != nil {
+		return err
+	}
 
-3. ИЗВЛЕЧЕНИЕ ДАННЫХ:
-   - Ручная обработка массива сообщений
-   - Поиск по номерам сообщений (MsgNumActivity, MsgNumSession)
-   - Использование mesgdef для преобразования сообщений
-
-4. РАБОТА С ВРЕМЕНЕМ:
-   - datetime.ToTime() для конвертации FIT timestamp в time.Time
-
-5. ТИПЫ ДАННЫХ:
-   - typedef.Sport, typedef.SessionTrigger для строго типизированных enum
-
-ПРЕИМУЩЕСТВА НОВОЙ БИБЛИОТЕКИ:
-- Поддержка FIT Protocol V2
-- Лучшая производительность
-- Полный доступ ко всем сообщениям протокола
-- Поддержка Developer Fields
-- Активная разработка и поддержка
-*/
+	return c.JSON(http.StatusOK, "OK")
+}
