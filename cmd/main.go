@@ -9,6 +9,7 @@ import (
 	"workout/internal/config"
 	handler "workout/internal/controller"
 	"workout/internal/service/activity"
+	"workout/internal/service/auth"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -57,16 +58,23 @@ func main() {
 	if err != nil {
 		return
 	}
-	svc := activity.NewWorkoutService(repo)
-	h := handler.NewController(svc)
 
-	// r.Get("/", handler.HomeHandler)
-	// r.Get("/api/v1/workouts", handler.WorkoutsHandler)
+	auth := auth.NewAuthService(repo, cfg.Auth.TokenTTL)
+	svc := activity.NewWorkoutService(repo)
+	h := handler.NewController(svc, auth)
+
+	e.POST("/login", h.Login)
+	e.POST("/register", h.Register)
+
+	api := e.Group("/api", handler.JWTMiddleware([]byte("")))
+
+	api.POST("/v1/workout/upload", h.UploadHandler)
+	api.POST("/v1/workout", h.CreateWorkout)
+	api.PUT("/v1/workout/{id}", h.UpdateWorkout) // Обновление тренировки (например, добавление заметок)
+	api.GET("/v1/workouts", h.GetWorkouts)
 	// r.Get("/api/v1/workouts/{id}", handler.WorkoutHandler)
-	e.POST("/api/v1/workout/upload", h.UploadHandler)
-	e.POST("/api/v1/workout", h.CreateWorkout)
-	e.PUT("/activities/{id}", h.UpdateWorkout) // Обновление тренировки (например, добавление заметок)
 	// r.Get("/api/v1/workouts/{id}/pacechart", handler.PaceChartHandler) // Получаем пейс для построения графика темпа
+	// r.Get("/", handler.HomeHandler)
 
 	// Модуль Activity
 	// /activities - загрузка новой тренировки
@@ -93,7 +101,7 @@ func main() {
 	// GET /api/v1/coaches/{coachID}/reports — Список отчетов от всех спортсменов тренера.
 
 	// Запускаем сервер
-	log.Printf("Сервер запущен на порту %d", cfg.Server.Port)
+	log.Printf("Сервер запущен на порту %d\n", cfg.Server.Port)
 	if err := http.ListenAndServe(":"+strconv.Itoa(cfg.Server.Port), e); err != nil {
 		log.Fatal("Ошибка запуска сервера:", err)
 	}

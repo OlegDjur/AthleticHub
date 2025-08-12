@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/gofrs/uuid/v5"
 	"workout/internal/dto"
 	"workout/internal/entity"
 
@@ -114,12 +115,28 @@ func extractActivityData(messages []proto.Message) (*entity.ActivityData, error)
 	return data, nil
 }
 
-func (s *WorkoutService) CreateWorkout(ctx context.Context, w entity.Workout) error {
-	return s.Activity.CreateWorkout(ctx, w)
+func (s *WorkoutService) CreateWorkout(ctx context.Context, w dto.WorkoutDTO) (*entity.Workout, error) {
+	workout, err := dto.WorkoutMapper(w)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.Activity.CreateWorkout(ctx, workout)
 }
 
-func (s *WorkoutService) GetWorkout(ctx context.Context, id int64) (*entity.Workout, error) {
-	return &entity.Workout{}, nil
+func (s *WorkoutService) GetWorkouts(ctx context.Context, userID string) ([]entity.Workout, error) {
+
+	uid, err := uuid.FromString(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	workouts, err := s.Activity.GetWorkouts(ctx, uid)
+	if err != nil {
+		return nil, err
+	}
+
+	return workouts, nil
 }
 
 func (s *WorkoutService) UpdateWorkout(ctx context.Context, u dto.UpdateWorkout) error {

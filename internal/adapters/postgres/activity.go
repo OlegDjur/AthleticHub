@@ -3,15 +3,16 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"github.com/gofrs/uuid/v5"
 	"strings"
 	"workout/internal/dto"
 	"workout/internal/entity"
 )
 
-func (p *postgres) CreateWorkout(ctx context.Context, workout entity.Workout) error {
+func (p *postgres) CreateWorkout(ctx context.Context, workout *entity.Workout) (*entity.Workout, error) {
 	query := `
         INSERT INTO workouts (
-            user_id, name, type, start_time, duration,
+            user_id, name, sport_type, date, duration,
             distance, avg_pace, avg_heart_rate, max_heart_rate,
             avg_cadence, calories, description, created_at, updated_at
         ) VALUES (
@@ -25,12 +26,43 @@ func (p *postgres) CreateWorkout(ctx context.Context, workout entity.Workout) er
 		workout.AvgCadence, workout.Calories, workout.Description,
 		workout.CreatedAt, workout.UpdatedAt,
 	)
-	return row.Scan(&workout.ID)
+
+	if err := row.Scan(&workout.ID); err != nil {
+		return nil, err
+	}
+
+	return workout, nil
 }
 
-// func (r *WorkoutRepository) GetWorkouts(ctx context.Context, id int64) (*models.Workout, error) {
-// 	return nil, nil
-// }
+func (p *postgres) GetWorkouts(ctx context.Context, userID uuid.UUID) ([]entity.Workout, error) {
+	query := `
+		SELECT id, user_id, name, sport_type, date, duration, distance,
+    		avg_pace, avg_heart_rate, max_heart_rate, avg_cadence,
+    		calories, description, created_at, updated_at
+		FROM workouts
+		WHERE user_id = $1
+		ORDER BY date DESC;`
+
+	rows, err := p.db.Query(ctx, query, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var workouts []entity.Workout
+	for rows.Next() {
+		var w entity.Workout
+		if err := rows.Scan(
+			&w.ID, &w.UserID, &w.Name, &w.SportType, &w.Date, &w.Duration,
+			&w.Distance, &w.AvgPace, &w.AvgHeartRate, &w.MaxHeartRate,
+			&w.AvgCadence, &w.Calories, &w.Description, &w.CreatedAt, &w.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		workouts = append(workouts, w)
+	}
+	return workouts, rows.Err()
+}
 
 func (p *postgres) GetWorkoutByID(ctx context.Context, id int64) (*entity.Workout, error) {
 	query := `

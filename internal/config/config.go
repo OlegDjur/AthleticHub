@@ -12,9 +12,13 @@ import (
 type Config struct {
 	Server   ServerConfig
 	Database DatabaseConfig
-	//Auth     AuthConfig
+	Auth     AuthConfig
 	//Storage  StorageConfig
 	//Logging  LoggingConfig
+}
+
+type AuthConfig struct {
+	TokenTTL time.Duration
 }
 
 // ServerConfig настройки сервера
@@ -70,6 +74,10 @@ func LoadConfig(envPath string) (*Config, error) {
 		MaxOpenConns:    getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
 		MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 5),
 		ConnMaxLifetime: getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
+	}
+
+	config.Auth = AuthConfig{
+		TokenTTL: getEnvAsDuration("AUTH_TOKEN_TTL", 30*time.Second),
 	}
 
 	return config, nil
